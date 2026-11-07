@@ -6,6 +6,28 @@ import matplotlib.pyplot as plt
 
 from PIL import Image, ImageOps
 
+# Custom attention slicing layer used by the proposed model
+@tf.keras.utils.register_keras_serializable()
+class AttentionSlice(tf.keras.layers.Layer):
+
+    def __init__(self, index, **kwargs):
+        kwargs.pop("mask", None)
+        super().__init__(**kwargs)
+        self.index = index
+        self.supports_masking = True
+
+    def call(self, inputs):
+        return inputs[:, self.index:self.index + 1]
+
+    def compute_output_shape(self, input_shape):
+        return (input_shape[0], 1)
+
+    def get_config(self):
+        config = super().get_config()
+        config.update({"index": self.index})
+        return config
+
+
 # -----------------------------
 # PAGE CONFIGURATION
 # -----------------------------
@@ -40,11 +62,14 @@ def load_models():
         compile=False
     )
 
-    proposed = tf.keras.models.load_model(
-        "dual_bottleneck_attention.keras",
-        compile=False,
-        safe_mode=False
-    )
+   proposed = tf.keras.models.load_model(
+    "dual_bottleneck_attention.keras",
+    compile=False,
+    custom_objects={
+        "AttentionSlice": AttentionSlice,
+        "Custom>AttentionSlice": AttentionSlice
+    }
+)
 
     attention = tf.keras.Model(
         inputs=proposed.input,
