@@ -54,22 +54,22 @@ st.info(
 # -----------------------------
 # LOAD MODELS
 # -----------------------------
+
 @st.cache_resource
 def load_models():
-
     baseline = tf.keras.models.load_model(
         "baseline_autoencoder.keras",
         compile=False
     )
 
-   proposed = tf.keras.models.load_model(
-    "dual_bottleneck_attention.keras",
-    compile=False,
-    custom_objects={
-        "AttentionSlice": AttentionSlice,
-        "Custom>AttentionSlice": AttentionSlice
-    }
-)
+    proposed = tf.keras.models.load_model(
+        "dual_bottleneck_attention.keras",
+        compile=False,
+        custom_objects={
+            "AttentionSlice": AttentionSlice,
+            "Custom>AttentionSlice": AttentionSlice
+        }
+    )
 
     attention = tf.keras.Model(
         inputs=proposed.input,
@@ -77,6 +77,7 @@ def load_models():
     )
 
     return baseline, proposed, attention
+
 
 
 try:
