@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageOps
 
 # Custom attention slicing layer used by the proposed model
+
 @tf.keras.utils.register_keras_serializable()
 class AttentionSlice(tf.keras.layers.Layer):
 
@@ -16,7 +17,7 @@ class AttentionSlice(tf.keras.layers.Layer):
         self.index = index
         self.supports_masking = True
 
-    def call(self, inputs):
+    def call(self, inputs, mask=None):
         return inputs[:, self.index:self.index + 1]
 
     def compute_output_shape(self, input_shape):
@@ -26,6 +27,7 @@ class AttentionSlice(tf.keras.layers.Layer):
         config = super().get_config()
         config.update({"index": self.index})
         return config
+
 
 
 # -----------------------------
