@@ -1,14 +1,27 @@
+
+import os
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-st.write("DEBUG - App directory:", os.path.dirname(os.path.abspath(__file__)))
-st.write("DEBUG - Files found:", os.listdir(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image, ImageOps
 
-# Custom attention slicing layer used by the proposed model
+
+# --------------------------------------------------
+# PAGE CONFIGURATION
+# --------------------------------------------------
+
+st.set_page_config(
+    page_title="Dual-Bottleneck Autoencoder",
+    page_icon="🫁",
+    layout="wide"
+)
+
+
+# --------------------------------------------------
+# CUSTOM ATTENTION LAYER
+# --------------------------------------------------
 
 @tf.keras.utils.register_keras_serializable()
 class AttentionSlice(tf.keras.layers.Layer):
@@ -31,15 +44,9 @@ class AttentionSlice(tf.keras.layers.Layer):
         return config
 
 
-
-# -----------------------------
-# PAGE CONFIGURATION
-# -----------------------------
-st.set_page_config(
-    page_title="Dual-Bottleneck Autoencoder",
-    page_icon="🫁",
-    layout="wide"
-)
+# --------------------------------------------------
+# APP TITLE
+# --------------------------------------------------
 
 st.title("🫁 Chest X-ray Reconstruction System")
 
@@ -54,58 +61,54 @@ st.info(
     "Educational research demonstration only. "
     "This application does not diagnose pneumonia or other diseases."
 )
+
+
+# --------------------------------------------------
+# MODEL FILE PATHS
+# --------------------------------------------------
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "baseline_autoencoder.keras")
 
-st.write("Baseline exists:", os.path.isfile(MODEL_PATH))
-st.write("Baseline size:", os.path.getsize(MODEL_PATH) if os.path.isfile(MODEL_PATH) else "MISSING")
-# -----------------------------
+
+def find_model_file(possible_names):
+
+    for filename in possible_names:
+        path = os.path.join(BASE_DIR, filename)
+
+        if os.path.isfile(path) and os.path.getsize(path) > 1000:
+            return path
+
+    available_files = os.listdir(BASE_DIR)
+
+    raise FileNotFoundError(
+        "Model file not found.\n"
+        f"Expected one of: {possible_names}\n"
+        f"Files available in app directory: {available_files}"
+    )
+
+
+# --------------------------------------------------
 # LOAD MODELS
-# -----------------------------
-
-
-# -----------------------------
-# LOAD MODELS
-# -----------------------------
+# --------------------------------------------------
 
 @st.cache_resource
 def load_models():
 
-    # Get the directory containing app.py
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    baseline_path = find_model_file([
+        "baseline_autoencoder.keras",
+        "baseline_autoencoder .keras",
+        "baseline_autoencoder (1).keras"
+    ])
 
-    # Construct absolute model paths
-    baseline_path = os.path.join(
-        BASE_DIR,
-        "baseline_autoencoder.keras"
-    )
-
-    proposed_path = os.path.join(
-        BASE_DIR,
+    proposed_path = find_model_file([
         "dual_bottleneck_attention.keras"
-    )
+    ])
 
-    # Check whether model files exist
-    if not os.path.isfile(baseline_path):
-        raise FileNotFoundError(
-            f"Baseline model not found: {baseline_path}"
-        )
-
-    if not os.path.isfile(proposed_path):
-        raise FileNotFoundError(
-            f"Proposed model not found: {proposed_path}"
-        )
-
-    print("Baseline model found:", baseline_path)
-    print("Proposed model found:", proposed_path)
-
-    # Load baseline model
     baseline = tf.keras.models.load_model(
         baseline_path,
         compile=False
     )
 
-    # Load proposed model
     proposed = tf.keras.models.load_model(
         proposed_path,
         compile=False,
@@ -115,7 +118,6 @@ def load_models():
         }
     )
 
-    # Extract attention weights
     attention = tf.keras.Model(
         inputs=proposed.input,
         outputs=proposed.get_layer("attention_weights").output
@@ -124,20 +126,27 @@ def load_models():
     return baseline, proposed, attention
 
 
-
+# --------------------------------------------------
+# MODEL LOADING STATUS
+# --------------------------------------------------
 
 try:
+
     baseline_model, proposed_model, attention_model = load_models()
+
     st.success("Both autoencoder models loaded successfully!")
 
 except Exception as e:
+
     st.error(f"Model loading failed: {e}")
+
     st.stop()
 
 
-# -----------------------------
+# --------------------------------------------------
 # IMAGE UPLOAD
-# -----------------------------
+# --------------------------------------------------
+
 st.header("1. Upload Chest X-ray")
 
 uploaded_file = st.file_uploader(
@@ -145,182 +154,229 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png"]
 )
 
+
 if uploaded_file is not None:
 
-    original = Image.open(uploaded_file)
-    original = ImageOps.exif_transpose(original)
+    try:
 
-    image = original.convert("L").resize((128, 128))
+        original = Image.open(uploaded_file)
+        original = ImageOps.exif_transpose(original)
 
-    image_array = np.array(image).astype("float32") / 255.0
+        image = original.convert("L").resize((128, 128))
 
-    input_image = np.expand_dims(
-        np.expand_dims(image_array, axis=0),
-        axis=-1
-    )
+        image_array = np.array(image).astype("float32") / 255.0
 
-    st.header("2. Reconstruction Comparison")
-
-    with st.spinner("Reconstructing image using both models..."):
-
-        baseline_reconstruction = baseline_model.predict(
-            input_image, verbose=0
+        input_image = np.expand_dims(
+            image_array,
+            axis=(0, -1)
         )
 
-        proposed_reconstruction = proposed_model.predict(
-            input_image, verbose=0
+        # --------------------------------------------------
+        # RECONSTRUCTION
+        # --------------------------------------------------
+
+        st.header("2. Reconstruction Comparison")
+
+        with st.spinner("Reconstructing image using both models..."):
+
+            baseline_reconstruction = baseline_model.predict(
+                input_image,
+                verbose=0
+            )
+
+            proposed_reconstruction = proposed_model.predict(
+                input_image,
+                verbose=0
+            )
+
+            attention_weights = attention_model.predict(
+                input_image,
+                verbose=0
+            )[0]
+
+        baseline_image = baseline_reconstruction[0].squeeze()
+        proposed_image = proposed_reconstruction[0].squeeze()
+
+        # --------------------------------------------------
+        # DISPLAY IMAGES
+        # --------------------------------------------------
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.subheader("Original Image")
+            st.image(image_array, use_container_width=True)
+
+        with col2:
+            st.subheader("Baseline Model")
+            st.image(baseline_image, use_container_width=True)
+
+        with col3:
+            st.subheader("Proposed Model")
+            st.image(proposed_image, use_container_width=True)
+
+        # --------------------------------------------------
+        # RECONSTRUCTION METRICS
+        # --------------------------------------------------
+
+        st.header("3. Reconstruction Performance")
+
+        original_tensor = tf.convert_to_tensor(
+            input_image,
+            dtype=tf.float32
         )
 
-        attention_weights = attention_model.predict(
-            input_image, verbose=0
-        )[0]
-
-    baseline_image = baseline_reconstruction[0].squeeze()
-    proposed_image = proposed_reconstruction[0].squeeze()
-
-    # -----------------------------
-    # DISPLAY IMAGES
-    # -----------------------------
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.subheader("Original Image")
-        st.image(image_array, use_container_width=True)
-
-    with col2:
-        st.subheader("Baseline Model")
-        st.image(baseline_image, use_container_width=True)
-
-    with col3:
-        st.subheader("Proposed Model")
-        st.image(proposed_image, use_container_width=True)
-
-    # -----------------------------
-    # RECONSTRUCTION METRICS
-    # -----------------------------
-    st.header("3. Reconstruction Performance")
-
-    original_tensor = tf.convert_to_tensor(
-        input_image, dtype=tf.float32
-    )
-
-    baseline_tensor = tf.convert_to_tensor(
-        baseline_reconstruction, dtype=tf.float32
-    )
-
-    proposed_tensor = tf.convert_to_tensor(
-        proposed_reconstruction, dtype=tf.float32
-    )
-
-    def calculate_metrics(original, reconstructed):
-
-        mse = float(
-            tf.reduce_mean(
-                tf.square(original - reconstructed)
-            ).numpy()
+        baseline_tensor = tf.convert_to_tensor(
+            baseline_reconstruction,
+            dtype=tf.float32
         )
 
-        ssim = float(
-            tf.reduce_mean(
-                tf.image.ssim(original, reconstructed, max_val=1.0)
-            ).numpy()
+        proposed_tensor = tf.convert_to_tensor(
+            proposed_reconstruction,
+            dtype=tf.float32
         )
 
-        psnr = float(
-            tf.reduce_mean(
-                tf.image.psnr(original, reconstructed, max_val=1.0)
-            ).numpy()
+        def calculate_metrics(original, reconstructed):
+
+            mse = float(
+                tf.reduce_mean(
+                    tf.square(original - reconstructed)
+                ).numpy()
+            )
+
+            ssim = float(
+                tf.reduce_mean(
+                    tf.image.ssim(
+                        original,
+                        reconstructed,
+                        max_val=1.0
+                    )
+                ).numpy()
+            )
+
+            psnr = float(
+                tf.reduce_mean(
+                    tf.image.psnr(
+                        original,
+                        reconstructed,
+                        max_val=1.0
+                    )
+                ).numpy()
+            )
+
+            return mse, ssim, psnr
+
+        baseline_metrics = calculate_metrics(
+            original_tensor,
+            baseline_tensor
         )
 
-        return mse, ssim, psnr
+        proposed_metrics = calculate_metrics(
+            original_tensor,
+            proposed_tensor
+        )
 
-    baseline_metrics = calculate_metrics(
-        original_tensor, baseline_tensor
-    )
+        metric_col1, metric_col2 = st.columns(2)
 
-    proposed_metrics = calculate_metrics(
-        original_tensor, proposed_tensor
-    )
+        with metric_col1:
 
-    metric_col1, metric_col2 = st.columns(2)
+            st.subheader("Baseline Metrics")
 
-    with metric_col1:
-        st.subheader("Baseline Metrics")
-        st.metric("MSE", f"{baseline_metrics[0]:.5f}")
-        st.metric("SSIM", f"{baseline_metrics[1]:.5f}")
-        st.metric("PSNR", f"{baseline_metrics[2]:.2f} dB")
+            st.metric("MSE", f"{baseline_metrics[0]:.5f}")
+            st.metric("SSIM", f"{baseline_metrics[1]:.5f}")
+            st.metric("PSNR", f"{baseline_metrics[2]:.2f} dB")
 
-    with metric_col2:
-        st.subheader("Proposed Model Metrics")
-        st.metric("MSE", f"{proposed_metrics[0]:.5f}")
-        st.metric("SSIM", f"{proposed_metrics[1]:.5f}")
-        st.metric("PSNR", f"{proposed_metrics[2]:.2f} dB")
+        with metric_col2:
 
-    # -----------------------------
-    # ATTENTION VISUALIZATION
-    # -----------------------------
-    st.header("4. Attention-Based Feature Fusion")
+            st.subheader("Proposed Model Metrics")
 
-    global_weight = float(attention_weights[0])
-    local_weight = float(attention_weights[1])
+            st.metric("MSE", f"{proposed_metrics[0]:.5f}")
+            st.metric("SSIM", f"{proposed_metrics[1]:.5f}")
+            st.metric("PSNR", f"{proposed_metrics[2]:.2f} dB")
 
-    att_col1, att_col2 = st.columns(2)
+        # --------------------------------------------------
+        # ATTENTION VISUALIZATION
+        # --------------------------------------------------
 
-    with att_col1:
-        st.metric("Global Attention", f"{global_weight:.2%}")
+        st.header("4. Attention-Based Feature Fusion")
 
-    with att_col2:
-        st.metric("Local Attention", f"{local_weight:.2%}")
+        global_weight = float(attention_weights[0])
+        local_weight = float(attention_weights[1])
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+        att_col1, att_col2 = st.columns(2)
 
-    ax.bar(
-        ["Global Features", "Local Features"],
-        [global_weight, local_weight]
-    )
+        with att_col1:
+            st.metric(
+                "Global Attention",
+                f"{global_weight:.2%}"
+            )
 
-    ax.set_ylabel("Attention Weight")
-    ax.set_title("Global vs Local Attention")
-    ax.set_ylim(0, 1)
+        with att_col2:
+            st.metric(
+                "Local Attention",
+                f"{local_weight:.2%}"
+            )
 
-    for i, value in enumerate([global_weight, local_weight]):
-        ax.text(i, value + 0.02, f"{value:.2%}", ha="center")
+        fig, ax = plt.subplots(figsize=(7, 4))
 
-    st.pyplot(fig)
-    plt.close(fig)
+        ax.bar(
+            ["Global Features", "Local Features"],
+            [global_weight, local_weight]
+        )
 
-    # -----------------------------
-    # TEST DATASET RESULTS
-    # -----------------------------
-    st.header("5. Previously Evaluated Test-Set Results")
+        ax.set_ylabel("Attention Weight")
+        ax.set_title("Global vs Local Attention")
+        ax.set_ylim(0, 1)
 
-    st.caption(
-        "These are your previously measured results on the 624-image "
-        "test set, not metrics for the uploaded image."
-    )
+        for i, value in enumerate(
+            [global_weight, local_weight]
+        ):
 
-    results_col1, results_col2 = st.columns(2)
+            ax.text(
+                i,
+                value + 0.02,
+                f"{value:.2%}",
+                ha="center"
+            )
 
-    with results_col1:
-        st.subheader("Baseline")
-        st.write("MSE: 0.05679")
-        st.write("SSIM: 0.33537")
-        st.write("PSNR: 12.60 dB")
+        st.pyplot(fig)
+        plt.close(fig)
 
-    with results_col2:
-        st.subheader("Proposed")
-        st.write("MSE: 0.00478")
-        st.write("SSIM: 0.61800")
-        st.write("PSNR: 23.47 dB")
+        # --------------------------------------------------
+        # RESULTS INFORMATION
+        # --------------------------------------------------
 
-    st.success("Image reconstruction and attention analysis completed!")
+        st.header("5. Evaluation Information")
+
+        st.caption(
+            "The metrics displayed above are calculated for "
+            "the currently uploaded image. They are not "
+            "aggregate test-dataset results."
+        )
+
+        st.success(
+            "Image reconstruction and attention analysis completed!"
+        )
+
+    except Exception as e:
+
+        st.error(f"Error processing the uploaded image: {e}")
+
 
 else:
-    st.info("Upload a chest X-ray image to begin the demonstration.")
+
+    st.info(
+        "Upload a chest X-ray image to begin the demonstration."
+    )
+
+
+# --------------------------------------------------
+# FOOTER
+# --------------------------------------------------
 
 st.divider()
 
 st.caption(
-    "Dual-Bottleneck Autoencoder with Attention-Based Feature Fusion "
-    "| Academic Project"
+    "Dual-Bottleneck Autoencoder with Attention-Based "
+    "Feature Fusion | Academic Project"
 )
