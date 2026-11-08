@@ -3,6 +3,8 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+st.write("DEBUG - App directory:", os.path.dirname(os.path.abspath(__file__)))
+st.write("DEBUG - Files found:", os.listdir(os.path.dirname(os.path.abspath(__file__))))
 
 from PIL import Image, ImageOps
 
