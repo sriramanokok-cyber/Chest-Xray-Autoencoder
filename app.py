@@ -54,7 +54,11 @@ st.info(
     "Educational research demonstration only. "
     "This application does not diagnose pneumonia or other diseases."
 )
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "baseline_autoencoder.keras")
 
+st.write("Baseline exists:", os.path.isfile(MODEL_PATH))
+st.write("Baseline size:", os.path.getsize(MODEL_PATH) if os.path.isfile(MODEL_PATH) else "MISSING")
 # -----------------------------
 # LOAD MODELS
 # -----------------------------
