@@ -1,8 +1,8 @@
-
 import streamlit as st
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 from PIL import Image, ImageOps
 
@@ -57,15 +57,51 @@ st.info(
 # LOAD MODELS
 # -----------------------------
 
+
+# -----------------------------
+# LOAD MODELS
+# -----------------------------
+
 @st.cache_resource
 def load_models():
+
+    # Get the directory containing app.py
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+    # Construct absolute model paths
+    baseline_path = os.path.join(
+        BASE_DIR,
+        "baseline_autoencoder.keras"
+    )
+
+    proposed_path = os.path.join(
+        BASE_DIR,
+        "dual_bottleneck_attention.keras"
+    )
+
+    # Check whether model files exist
+    if not os.path.isfile(baseline_path):
+        raise FileNotFoundError(
+            f"Baseline model not found: {baseline_path}"
+        )
+
+    if not os.path.isfile(proposed_path):
+        raise FileNotFoundError(
+            f"Proposed model not found: {proposed_path}"
+        )
+
+    print("Baseline model found:", baseline_path)
+    print("Proposed model found:", proposed_path)
+
+    # Load baseline model
     baseline = tf.keras.models.load_model(
-        "baseline_autoencoder.keras",
+        baseline_path,
         compile=False
     )
 
+    # Load proposed model
     proposed = tf.keras.models.load_model(
-        "dual_bottleneck_attention.keras",
+        proposed_path,
         compile=False,
         custom_objects={
             "AttentionSlice": AttentionSlice,
@@ -73,12 +109,14 @@ def load_models():
         }
     )
 
+    # Extract attention weights
     attention = tf.keras.Model(
         inputs=proposed.input,
         outputs=proposed.get_layer("attention_weights").output
     )
 
     return baseline, proposed, attention
+
 
 
 
