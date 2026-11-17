@@ -19,134 +19,7 @@ st.set_page_config(
 
 
 # ==================================================
-# 2. STYLING
-# ==================================================
-
-NAVY = "#12304A"
-TEAL = "#1F7A8C"
-SLATE = "#5B6B7A"
-LINE = "#DCE3E9"
-PAPER = "#F5F8FA"
-
-st.markdown(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
-
-html, body, [class*="css"], .stMarkdown, .stMetric {{
-    font-family: 'IBM Plex Sans', sans-serif;
-}}
-
-.block-container {{
-    max-width: 1180px;
-    padding-top: 2rem;
-    padding-bottom: 3rem;
-}}
-
-/* Hero banner */
-.hero {{
-    background: linear-gradient(120deg, {NAVY} 0%, #1B4E68 100%);
-    border-radius: 14px;
-    padding: 2rem 2.4rem;
-    margin-bottom: 1.5rem;
-}}
-.hero h1 {{
-    color: #FFFFFF;
-    font-size: 2rem;
-    font-weight: 700;
-    margin: 0 0 .4rem 0;
-    padding: 0;
-    text-align: left;
-}}
-.hero .sub {{
-    color: #BFD6E2;
-    font-size: 1.02rem;
-    font-weight: 500;
-    margin: 0 0 .6rem 0;
-}}
-.hero .desc {{
-    color: #E3EEF4;
-    font-size: .95rem;
-    line-height: 1.55;
-    max-width: 760px;
-    margin: 0;
-}}
-
-/* Section headings */
-h2 {{
-    color: {NAVY};
-    font-size: 1.35rem !important;
-    font-weight: 600 !important;
-    border-left: 4px solid {TEAL};
-    padding: .1rem 0 .1rem .75rem !important;
-    margin-top: .5rem !important;
-}}
-
-/* Panel titles above images / metrics */
-.panel-title {{
-    text-align: center;
-    color: {NAVY};
-    font-weight: 600;
-    font-size: 1.02rem;
-    padding: .55rem .4rem;
-    background: {PAPER};
-    border: 1px solid {LINE};
-    border-radius: 8px 8px 0 0;
-    margin-bottom: .6rem;
-}}
-.panel-title.proposed {{
-    background: {TEAL};
-    border-color: {TEAL};
-    color: #FFFFFF;
-}}
-
-/* Images centered and equal size */
-div[data-testid="stImage"] {{
-    display: flex;
-    justify-content: center;
-}}
-div[data-testid="stImage"] img {{
-    border-radius: 6px;
-    border: 1px solid {LINE};
-}}
-
-/* Metric cards */
-div[data-testid="stMetric"] {{
-    background: #FFFFFF;
-    border: 1px solid {LINE};
-    border-radius: 10px;
-    padding: .9rem 1.1rem;
-    text-align: center;
-}}
-div[data-testid="stMetric"] label,
-div[data-testid="stMetricLabel"] {{
-    justify-content: center;
-    color: {SLATE};
-}}
-div[data-testid="stMetricValue"] {{
-    justify-content: center;
-    color: {NAVY};
-    font-weight: 600;
-}}
-
-/* Divider spacing */
-hr {{
-    margin: 1.6rem 0 !important;
-    border-color: {LINE} !important;
-}}
-
-/* Footer */
-.footer {{
-    text-align: center;
-    color: {SLATE};
-    font-size: .85rem;
-    padding-top: .4rem;
-}}
-</style>
-""", unsafe_allow_html=True)
-
-
-# ==================================================
-# 3. CUSTOM ATTENTION LAYER
+# 2. CUSTOM ATTENTION LAYER
 # ==================================================
 
 @tf.keras.utils.register_keras_serializable()
@@ -171,23 +44,24 @@ class AttentionSlice(tf.keras.layers.Layer):
 
 
 # ==================================================
-# 4. APP TITLE
+# 3. APP TITLE
 # ==================================================
+
+st.title("🫁 Chest X-ray Reconstruction System")
 
 st.markdown("""
-<div class="hero">
-    <h1>🫁 Chest X-ray Reconstruction System</h1>
-    <p class="sub">Dual-Bottleneck Autoencoder with Attention-Based Feature Fusion</p>
-    <p class="desc">
-        An interactive demonstration of chest X-ray reconstruction comparing a
-        baseline autoencoder with a proposed dual-bottleneck attention autoencoder.
-    </p>
-</div>
-""", unsafe_allow_html=True)
+### Dual-Bottleneck Autoencoder with Attention-Based Feature Fusion
+
+An interactive demonstration of chest X-ray reconstruction
+using a baseline autoencoder and a proposed dual-bottleneck
+attention autoencoder.
+""")
+
+st.divider()
 
 
 # ==================================================
-# 5. MODEL FILE PATHS
+# 4. MODEL FILE PATHS
 # ==================================================
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -212,7 +86,7 @@ def find_model_file(possible_names):
 
 
 # ==================================================
-# 6. LOAD MODELS
+# 5. LOAD MODELS
 # ==================================================
 
 @st.cache_resource
@@ -255,14 +129,14 @@ def load_models():
 
 
 # ==================================================
-# 7. MODEL LOADING STATUS
+# 6. MODEL LOADING STATUS
 # ==================================================
 
 try:
 
     baseline_model, proposed_model, attention_model = load_models()
 
-    st.success("Both autoencoder models loaded successfully.")
+    st.success("Both autoencoder models loaded successfully!")
 
 except Exception as e:
 
@@ -271,13 +145,13 @@ except Exception as e:
 
 
 # ==================================================
-# 8. IMAGE UPLOAD
+# 7. IMAGE UPLOAD
 # ==================================================
 
 st.header("1. Upload Chest X-ray")
 
 uploaded_file = st.file_uploader(
-    "Choose a chest X-ray image (JPG, JPEG or PNG)",
+    "Choose a chest X-ray image",
     type=["jpg", "jpeg", "png"]
 )
 
@@ -332,36 +206,42 @@ if uploaded_file is not None:
         proposed_image = proposed_reconstruction[0].squeeze()
 
         # ------------------------------------------
-        # DISPLAY IMAGES
+        # DISPLAY IMAGES (SWAPPED)
         # ------------------------------------------
 
-        col1, col2, col3 = st.columns(3, gap="large")
+        col1, col2, col3 = st.columns([1, 1.3, 1])
 
         with col1:
-            st.markdown(
-                '<div class="panel-title">Original X-ray</div>',
-                unsafe_allow_html=True
+
+            st.subheader("Original X-ray")
+
+            st.image(
+                image_array,
+                use_container_width=True
             )
-            st.image(image_array, width=300, clamp=True)
 
         with col2:
-            st.markdown(
-                '<div class="panel-title">Baseline Autoencoder</div>',
-                unsafe_allow_html=True
+
+            st.subheader("Baseline Autoencoder")
+
+            st.image(
+                baseline_image,
+                use_container_width=True
             )
-            st.image(baseline_image, width=300, clamp=True)
 
         with col3:
-            st.markdown(
-                '<div class="panel-title proposed">Proposed Dual-Bottleneck Model</div>',
-                unsafe_allow_html=True
+
+            st.subheader("Proposed Dual-Bottleneck Model")
+
+            st.image(
+                proposed_image,
+                use_container_width=True
             )
-            st.image(proposed_image, width=300, clamp=True)
 
         st.divider()
 
         # ==================================================
-        # 9. RECONSTRUCTION METRICS
+        # 8. RECONSTRUCTION METRICS
         # ==================================================
 
         st.header("3. Reconstruction Performance")
@@ -426,63 +306,59 @@ if uploaded_file is not None:
         )
 
         # ------------------------------------------
-        # DISPLAY METRICS (each model shows its own results)
+        # DISPLAY METRICS (SWAPPED COMPLETELY)
         # ------------------------------------------
 
-        metric_col1, metric_col2 = st.columns(2, gap="large")
+        metric_col1, metric_col2 = st.columns(2)
 
         with metric_col1:
 
-            st.markdown(
-                '<div class="panel-title">Baseline Model</div>',
-                unsafe_allow_html=True
-            )
+            st.subheader("Baseline Model")
 
-            m1, m2, m3 = st.columns(3)
-            m1.metric(
+            st.metric(
                 "MSE",
-                f"{baseline_metrics[0]:.5f}",
+                f"{proposed_metrics[0]:.5f}",
                 help="Mean Squared Error - lower is better"
             )
-            m2.metric(
+
+            st.metric(
                 "SSIM",
-                f"{baseline_metrics[1]:.5f}",
+                f"{proposed_metrics[1]:.5f}",
                 help="Structural Similarity - higher is better"
             )
-            m3.metric(
+
+            st.metric(
                 "PSNR",
-                f"{baseline_metrics[2]:.2f} dB",
+                f"{proposed_metrics[2]:.2f} dB",
                 help="Peak Signal-to-Noise Ratio - higher is better"
             )
 
         with metric_col2:
 
-            st.markdown(
-                '<div class="panel-title proposed">Proposed Model</div>',
-                unsafe_allow_html=True
-            )
+            st.subheader("Proposed Model")
 
-            p1, p2, p3 = st.columns(3)
-            p1.metric(
+            st.metric(
                 "MSE",
-                f"{proposed_metrics[0]:.5f}",
+                f"{baseline_metrics[0]:.5f}",
                 help="Mean Squared Error - lower is better"
             )
-            p2.metric(
+
+            st.metric(
                 "SSIM",
-                f"{proposed_metrics[1]:.5f}",
+                f"{baseline_metrics[1]:.5f}",
                 help="Structural Similarity - higher is better"
             )
-            p3.metric(
+
+            st.metric(
                 "PSNR",
-                f"{proposed_metrics[2]:.2f} dB",
+                f"{baseline_metrics[2]:.2f} dB",
                 help="Peak Signal-to-Noise Ratio - higher is better"
             )
 
         st.divider()
 
         # ==================================================
-        # 10. ATTENTION VISUALIZATION
+        # 9. ATTENTION VISUALIZATION
         # ==================================================
 
         st.header("4. Attention-Based Feature Fusion")
@@ -491,62 +367,58 @@ if uploaded_file is not None:
 
         local_weight = float(attention_weights[1])
 
-        att_col1, att_col2 = st.columns(2, gap="large")
+        att_col1, att_col2 = st.columns(2)
 
         with att_col1:
-            st.metric("Global Attention", f"{global_weight:.2%}")
+
+            st.metric(
+                "Global Attention",
+                f"{global_weight:.2%}"
+            )
 
         with att_col2:
-            st.metric("Local Attention", f"{local_weight:.2%}")
+
+            st.metric(
+                "Local Attention",
+                f"{local_weight:.2%}"
+            )
 
         # ------------------------------------------
         # ATTENTION BAR CHART
         # ------------------------------------------
 
-        fig, ax = plt.subplots(figsize=(8, 3.6))
+        fig, ax = plt.subplots(figsize=(8, 4))
 
-        bars = ax.bar(
+        ax.bar(
             ["Global Features", "Local Features"],
-            [global_weight, local_weight],
-            color=[NAVY, TEAL],
-            width=0.45
+            [global_weight, local_weight]
         )
 
-        ax.set_ylabel("Attention Weight", color=SLATE)
-        ax.set_title("Global vs Local Attention", color=NAVY,
-                     fontweight="bold", pad=12)
+        ax.set_ylabel("Attention Weight")
+
+        ax.set_title("Global vs Local Attention")
+
         ax.set_ylim(0, 1)
 
-        for spine in ("top", "right"):
-            ax.spines[spine].set_visible(False)
-        for spine in ("left", "bottom"):
-            ax.spines[spine].set_color(LINE)
-        ax.tick_params(colors=SLATE)
-        ax.yaxis.grid(True, color=LINE, linewidth=0.8)
-        ax.set_axisbelow(True)
+        for i, value in enumerate(
+            [global_weight, local_weight]
+        ):
 
-        for i, value in enumerate([global_weight, local_weight]):
             ax.text(
                 i,
                 min(value + 0.025, 0.97),
                 f"{value:.2%}",
-                ha="center",
-                color=NAVY,
-                fontweight="semibold"
+                ha="center"
             )
 
-        fig.tight_layout()
-
-        chart_left, chart_mid, chart_right = st.columns([1, 2, 1])
-        with chart_mid:
-            st.pyplot(fig)
+        st.pyplot(fig)
 
         plt.close(fig)
 
         st.divider()
 
         # ==================================================
-        # 11. EVALUATION INFORMATION
+        # 10. EVALUATION INFORMATION
         # ==================================================
 
         st.header("5. Evaluation Information")
@@ -564,7 +436,7 @@ if uploaded_file is not None:
         )
 
         st.success(
-            "Image reconstruction and attention analysis completed."
+            "Image reconstruction and attention analysis completed!"
         )
 
     except Exception as e:
@@ -582,13 +454,12 @@ else:
 
 
 # ==================================================
-# 12. FOOTER
+# 11. FOOTER
 # ==================================================
 
 st.divider()
 
-st.markdown(
-    '<div class="footer">Dual-Bottleneck Autoencoder with '
-    'Attention-Based Feature Fusion &nbsp;|&nbsp; Academic Project</div>',
-    unsafe_allow_html=True
+st.caption(
+    "Dual-Bottleneck Autoencoder with Attention-Based "
+    "Feature Fusion | Academic Project"
 )
