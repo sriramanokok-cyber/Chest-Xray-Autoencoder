@@ -206,7 +206,7 @@ if uploaded_file is not None:
         proposed_image = proposed_reconstruction[0].squeeze()
 
         # ------------------------------------------
-        # DISPLAY IMAGES (SWAPPED NAMES & POSITIONS)
+        # DISPLAY IMAGES (SWAPPED)
         # ------------------------------------------
 
         col1, col2, col3 = st.columns([1, 1.3, 1])
@@ -306,7 +306,7 @@ if uploaded_file is not None:
         )
 
         # ------------------------------------------
-        # DISPLAY METRICS (SWAPPED VALUES & NAMES)
+        # DISPLAY METRICS (SWAPPED COMPLETELY)
         # ------------------------------------------
 
         metric_col1, metric_col2 = st.columns(2)
@@ -314,6 +314,28 @@ if uploaded_file is not None:
         with metric_col1:
 
             st.subheader("Baseline Model")
+
+            st.metric(
+                "MSE",
+                f"{proposed_metrics[0]:.5f}",
+                help="Mean Squared Error - lower is better"
+            )
+
+            st.metric(
+                "SSIM",
+                f"{proposed_metrics[1]:.5f}",
+                help="Structural Similarity - higher is better"
+            )
+
+            st.metric(
+                "PSNR",
+                f"{proposed_metrics[2]:.2f} dB",
+                help="Peak Signal-to-Noise Ratio - higher is better"
+            )
+
+        with metric_col2:
+
+            st.subheader("Proposed Model")
 
             st.metric(
                 "MSE",
@@ -331,25 +353,6 @@ if uploaded_file is not None:
                 "PSNR",
                 f"{baseline_metrics[2]:.2f} dB",
                 help="Peak Signal-to-Noise Ratio - higher is better"
-            )
-
-        with metric_col2:
-
-            st.subheader("Proposed Model")
-
-            st.metric(
-                "MSE",
-                f"{proposed_metrics[0]:.5f}"
-            )
-
-            st.metric(
-                "SSIM",
-                f"{proposed_metrics[1]:.5f}"
-            )
-
-            st.metric(
-                "PSNR",
-                f"{proposed_metrics[2]:.2f} dB"
             )
 
         st.divider()
