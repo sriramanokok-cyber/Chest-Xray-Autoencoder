@@ -1,4 +1,3 @@
-
 import os
 import streamlit as st
 import tensorflow as tf
@@ -207,8 +206,7 @@ if uploaded_file is not None:
         proposed_image = proposed_reconstruction[0].squeeze()
 
         # ------------------------------------------
-        # DISPLAY IMAGES
-        # PROPOSED MODEL FIRST
+        # DISPLAY IMAGES (SWAPPED NAMES & POSITIONS)
         # ------------------------------------------
 
         col1, col2, col3 = st.columns([1, 1.3, 1])
@@ -224,19 +222,19 @@ if uploaded_file is not None:
 
         with col2:
 
-            st.subheader("Proposed Dual-Bottleneck Model")
+            st.subheader("Baseline Autoencoder")
 
             st.image(
-                proposed_image,
+                baseline_image,
                 use_container_width=True
             )
 
         with col3:
 
-            st.subheader("Baseline Autoencoder")
+            st.subheader("Proposed Dual-Bottleneck Model")
 
             st.image(
-                baseline_image,
+                proposed_image,
                 use_container_width=True
             )
 
@@ -308,51 +306,50 @@ if uploaded_file is not None:
         )
 
         # ------------------------------------------
-        # DISPLAY METRICS
-        # PROPOSED MODEL FIRST
+        # DISPLAY METRICS (SWAPPED VALUES & NAMES)
         # ------------------------------------------
 
         metric_col1, metric_col2 = st.columns(2)
 
         with metric_col1:
 
-            st.subheader("Proposed Model")
+            st.subheader("Baseline Model")
 
             st.metric(
                 "MSE",
-                f"{proposed_metrics[0]:.5f}",
+                f"{baseline_metrics[0]:.5f}",
                 help="Mean Squared Error - lower is better"
             )
 
             st.metric(
                 "SSIM",
-                f"{proposed_metrics[1]:.5f}",
+                f"{baseline_metrics[1]:.5f}",
                 help="Structural Similarity - higher is better"
             )
 
             st.metric(
                 "PSNR",
-                f"{proposed_metrics[2]:.2f} dB",
+                f"{baseline_metrics[2]:.2f} dB",
                 help="Peak Signal-to-Noise Ratio - higher is better"
             )
 
         with metric_col2:
 
-            st.subheader("Baseline Model")
+            st.subheader("Proposed Model")
 
             st.metric(
                 "MSE",
-                f"{baseline_metrics[0]:.5f}"
+                f"{proposed_metrics[0]:.5f}"
             )
 
             st.metric(
                 "SSIM",
-                f"{baseline_metrics[1]:.5f}"
+                f"{proposed_metrics[1]:.5f}"
             )
 
             st.metric(
                 "PSNR",
-                f"{baseline_metrics[2]:.2f} dB"
+                f"{proposed_metrics[2]:.2f} dB"
             )
 
         st.divider()
