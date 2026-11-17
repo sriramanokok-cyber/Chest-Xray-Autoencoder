@@ -57,11 +57,6 @@ An interactive demonstration comparing a baseline autoencoder
 with a proposed dual-bottleneck attention autoencoder.
 """)
 
-st.info(
-    "Educational research demonstration only. "
-    "This application does not diagnose pneumonia or other diseases."
-)
-
 
 # --------------------------------------------------
 # MODEL FILE PATHS
@@ -201,20 +196,46 @@ if uploaded_file is not None:
         # DISPLAY IMAGES
         # --------------------------------------------------
 
-        col1, col2, col3 = st.columns(3)
+        # --------------------------------------------------
+# DISPLAY IMAGES — PROPOSED MODEL FIRST
+# --------------------------------------------------
 
-        with col1:
-            st.subheader("Original Image")
-            st.image(image_array, use_container_width=True)
+col1, col2, col3 = st.columns([1, 1.3, 1])
 
-        with col2:
-            st.subheader("Baseline Model")
-            st.image(baseline_image, use_container_width=True)
+with col1:
+    st.subheader("Original X-ray")
+    st.image(image_array, use_container_width=True)
 
-        with col3:
-            st.subheader("Proposed Model")
-            st.image(proposed_image, use_container_width=True)
+with col2:
+    st.subheader("Proposed Dual-Bottleneck Model")
+    st.image(proposed_image, use_container_width=True)
 
+with col3:
+    st.subheader("Baseline Autoencoder")
+    st.image(baseline_image, use_container_width=True)
+
+
+# --------------------------------------------------
+# METRICS — PROPOSED MODEL FIRST
+# --------------------------------------------------
+
+st.header("3. Reconstruction Performance")
+
+metric_col1, metric_col2 = st.columns(2)
+
+with metric_col1:
+    st.subheader("Proposed Model")
+
+    st.metric("MSE", f"{proposed_metrics[0]:.5f}")
+    st.metric("SSIM", f"{proposed_metrics[1]:.5f}")
+    st.metric("PSNR", f"{proposed_metrics[2]:.2f} dB")
+
+with metric_col2:
+    st.subheader("Baseline Model")
+
+    st.metric("MSE", f"{baseline_metrics[0]:.5f}")
+    st.metric("SSIM", f"{baseline_metrics[1]:.5f}")
+    st.metric("PSNR", f"{baseline_metrics[2]:.2f} dB")
         # --------------------------------------------------
         # RECONSTRUCTION METRICS
         # --------------------------------------------------
